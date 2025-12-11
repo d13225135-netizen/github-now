@@ -17,6 +17,12 @@ jobs:
           python-version: '3.10'
       - name: Install deps
         run: pip install mcstatus requests
+      - name: Debug workspace
+        run: |
+          echo "=== Содержимое репозитория ==="
+          ls -la
+          echo "=== scripts/ ==="
+          ls -la scripts || echo "scripts/ не найдена"
       - name: Run checker
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
