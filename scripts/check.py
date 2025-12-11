@@ -1,7 +1,7 @@
 import os, json, requests
 from mcstatus import JavaServer
 
-SERVER = JavaServer.lookup("yaneznau.peniscraft.pro:25565")
+SERVER = JavaServer.lookup("yaneznau.peniscraft.pro")
 BOT = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT = os.environ["TELEGRAM_CHAT_ID"]
 
