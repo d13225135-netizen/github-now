@@ -1,6 +1,6 @@
 import os, json, requests
 from mcstatus import JavaServer
-
+print("=== check.py started ===")
 # Адрес сервера (порт можно не указывать, если стандартный 25565)
 SERVER = JavaServer.lookup("yaneznau.peniscraft.pro")
 
@@ -47,3 +47,4 @@ for p in left:
 
 # Записываем текущее состояние ВСЕГДА
 write_last(current)
+print("=== check.py finished ===")
