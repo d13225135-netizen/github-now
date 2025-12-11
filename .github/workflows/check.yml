@@ -25,6 +25,6 @@ jobs:
           ls -la scripts || echo "scripts/ не найдена"
       - name: Run checker
         env:
-          TELEGRAMBOTTOKEN: ${{ secrets.TELEGRAMBOTTOKEN }}
-          TELEGRAMCHATID: ${{ secrets.TELEGRAMCHATID }}
-        run: python scripts/check.py   
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python scripts/check.py  
