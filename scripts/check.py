@@ -48,3 +48,6 @@ for p in left:
 
 if joined or left:
     write_last(current)
+if not last and current:
+    send(f"📊 Первый запуск: сейчас {len(current)} игроков: {', '.join(current)}")
+    write_last(current)
