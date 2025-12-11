@@ -1,7 +1,9 @@
 import os, json, requests
 from mcstatus import JavaServer
 
+# Адрес сервера (порт можно не указывать, если стандартный 25565)
 SERVER = JavaServer.lookup("yaneznau.peniscraft.pro")
+
 BOT = os.environ["TELEGRAM_BOT_TOKEN"]
 CHAT = os.environ["TELEGRAM_CHAT_ID"]
 
@@ -24,11 +26,15 @@ def write_last(players: set):
 
 last = read_last()
 
+# --- Получаем игроков ---
 try:
+    # Пробуем полный query (работает только если enable-query=true на сервере)
     status = SERVER.query()
     current = set(status.players.names or [])
 except Exception:
-    current = set()
+    # Если query недоступен, fallback на status()
+    status = SERVER.status()
+    current = set([p.name for p in (status.players.sample or [])])
 
 joined = current - last
 left = last - current
