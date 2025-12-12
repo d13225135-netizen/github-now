@@ -56,7 +56,11 @@ def write_last(players: Set[str]):
     try:
         os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
         with open(STATE_PATH, "w", encoding="utf-8") as f:
+            # всегда пишем список игроков в JSON
             json.dump(sorted(list(players)), f, ensure_ascii=False)
+            f.flush()        # принудительно сбросить буфер
+            os.fsync(f.fileno())  # гарантировать запись на диск
+        logging.info("Состояние сохранено: %s", players)
     except Exception:
         logging.exception("Не удалось сохранить файл состояния")
 
@@ -113,7 +117,9 @@ def main():
     logging.info("Summary: %s", summary)
     # Отправляем сводку каждый запуск (если не нужно — закомментируй)
     send(summary)
-
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+    send(f"--------------\n🕒 Сеанс завершён: {now}\n--------------") 
+    
     logging.info("=== check.py finished ===")
 
 if __name__ == "__main__":
