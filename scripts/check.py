@@ -7,6 +7,7 @@ import socket
 from typing import Set
 import requests
 from mcstatus import JavaServer
+import datetime
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
