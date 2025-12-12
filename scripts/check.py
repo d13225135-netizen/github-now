@@ -2,8 +2,8 @@
 # scripts/check.py
 import os
 import json
-import time
 import logging
+import socket
 from typing import Set
 import requests
 from mcstatus import JavaServer
@@ -30,8 +30,8 @@ def send(text: str):
             timeout=10
         )
         r.raise_for_status()
-    except Exception as e:
-        logging.exception("Ошибка при отправке Telegram: %s", e)
+    except Exception:
+        logging.exception("Ошибка при отправке Telegram")
 
 def read_last() -> Set[str]:
     try:
@@ -54,22 +54,33 @@ def write_last(players: Set[str]):
         logging.exception("Не удалось сохранить файл состояния")
 
 def get_players():
+    """
+    Используем временную установку системного таймаута сокетов,
+    чтобы не передавать timeout как именованный аргумент в mcstatus,
+    совместимо с разными версиями mcstatus.
+    """
+    old_timeout = socket.getdefaulttimeout()
+    socket.setdefaulttimeout(REQUEST_TIMEOUT)
     try:
-        q = SERVER.query(timeout=REQUEST_TIMEOUT)
-        players = set(q.players.names or [])
-        logging.info("Получено через query(): %s", players)
-        return players, "query"
-    except Exception as e:
-        logging.info("Query недоступен (%s), пробую status()", e)
-    try:
-        s = SERVER.status(timeout=REQUEST_TIMEOUT)
-        sample = s.players.sample or []
-        players = set([p.name for p in sample if getattr(p, "name", None)])
-        logging.info("Получено через status(): %s", players)
-        return players, "status"
-    except Exception as e:
-        logging.exception("Не удалось получить статус сервера: %s", e)
-        return set(), "error"
+        try:
+            q = SERVER.query()  # не передаём timeout=..., чтобы избежать ошибок в разных версиях mcstatus
+            players = set(q.players.names or [])
+            logging.info("Получено через query(): %s", players)
+            return players, "query"
+        except Exception as e:
+            logging.info("Query недоступен (%s), пробую status()", e)
+
+        try:
+            s = SERVER.status()
+            sample = s.players.sample or []
+            players = set([p.name for p in sample if getattr(p, "name", None)])
+            logging.info("Получено через status(): %s", players)
+            return players, "status"
+        except Exception as e:
+            logging.exception("Не удалось получить статус сервера: %s", e)
+            return set(), "error"
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 def main():
     logging.info("=== check.py started ===")
@@ -88,17 +99,15 @@ def main():
         for p in left:
             send(f"🚪 *Игрок {p} вышел с сервера.*\n📊 Сейчас {len(current)} игроков: {', '.join(sorted(current)) if current else 'никого'}")
 
-    # Если изменений нет — логируем, но не спамим Telegram
     if not joined and not left:
         logging.info("Изменений в составе нет. Сейчас: %s", ", ".join(sorted(current)) if current else "никого")
 
-    # Всегда сохраняем текущее состояние (важно для локального запуска)
     write_last(current)
 
-    # Краткая сводка (одним сообщением, опционально)
     summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current)) if current else 'никого'}"
     logging.info("Summary: %s", summary)
-    send(summary)  # раскомментируй, если хочешь получать сводку каждый запуск
+    # Отправляем сводку один раз за запуск (если не нужно — закомментируй)
+    send(summary)
 
     logging.info("=== check.py finished ===")
 
