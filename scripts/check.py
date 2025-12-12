@@ -64,7 +64,7 @@ def get_players():
     try:
         try:
             q = SERVER.query()  # не передаём timeout=..., чтобы избежать ошибок в разных версиях mcstatus
-            players = set(q.players.names or [])
+            players = set(q.players.list or [])
             logging.info("Получено через query(): %s", players)
             return players, "query"
         except Exception as e:
@@ -107,7 +107,12 @@ def main():
     summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current)) if current else 'никого'}"
     logging.info("Summary: %s", summary)
     # Отправляем сводку один раз за запуск (если не нужно — закомментируй)
-    send(summary)
+    if joined or left:
+        send(summary) 
+    else:
+        logging.info("Сводка не отправлена, так как изменений нет") 
+    if method == "query" and not current:
+        logging.info("query вернул пустой список, значит либо на сервере никого нет, либо query работает некорректно") 
 
     logging.info("=== check.py finished ===")
 
