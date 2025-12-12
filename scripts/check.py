@@ -10,6 +10,7 @@ from mcstatus import JavaServer
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 
+# Конфигурация
 SERVER_ADDR = os.environ.get("MC_HOST", "yaneznau.peniscraft.pro")
 SERVER = JavaServer.lookup(SERVER_ADDR)
 
@@ -22,6 +23,7 @@ if not BOT or not CHAT:
     logging.error("TELEGRAM_BOT_TOKEN или TELEGRAM_CHAT_ID не заданы в окружении")
     raise SystemExit(1)
 
+# --- Telegram ---
 def send(text: str):
     try:
         r = requests.post(
@@ -33,10 +35,15 @@ def send(text: str):
     except Exception:
         logging.exception("Ошибка при отправке Telegram")
 
+# --- Работа с файлом состояния ---
 def read_last() -> Set[str]:
     try:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
-            data = json.load(f)
+            content = f.read().strip()
+            if not content:
+                logging.info("Файл состояния пустой, считаем что никто не был онлайн")
+                return set()
+            data = json.loads(content)
             return set(data or [])
     except FileNotFoundError:
         logging.info("Файл состояния не найден, считаем что никто не был онлайн")
@@ -53,17 +60,14 @@ def write_last(players: Set[str]):
     except Exception:
         logging.exception("Не удалось сохранить файл состояния")
 
+# --- Получение игроков ---
 def get_players():
-    """
-    Используем временную установку системного таймаута сокетов,
-    чтобы не передавать timeout как именованный аргумент в mcstatus,
-    совместимо с разными версиями mcstatus.
-    """
     old_timeout = socket.getdefaulttimeout()
     socket.setdefaulttimeout(REQUEST_TIMEOUT)
     try:
         try:
-            q = SERVER.query()  # не передаём timeout=..., чтобы избежать ошибок в разных версиях mcstatus
+            q = SERVER.query()
+            # используем list вместо names (names устарело)
             players = set(q.players.list or [])
             logging.info("Получено через query(): %s", players)
             return players, "query"
@@ -82,6 +86,7 @@ def get_players():
     finally:
         socket.setdefaulttimeout(old_timeout)
 
+# --- Основная логика ---
 def main():
     logging.info("=== check.py started ===")
     last = read_last()
@@ -106,13 +111,8 @@ def main():
 
     summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current)) if current else 'никого'}"
     logging.info("Summary: %s", summary)
-    # Отправляем сводку один раз за запуск (если не нужно — закомментируй)
-    if joined or left:
-        send(summary) 
-    else:
-        logging.info("Сводка не отправлена, так как изменений нет") 
-    if method == "query" and not current:
-        logging.info("query вернул пустой список, значит либо на сервере никого нет, либо query работает некорректно") 
+    # Отправляем сводку каждый запуск (если не нужно — закомментируй)
+    send(summary)
 
     logging.info("=== check.py finished ===")
 
