@@ -43,25 +43,31 @@ def read_last() -> Set[str]:
         with open(STATE_PATH, "r", encoding="utf-8") as f:
             content = f.read().strip()
             if not content:
-                logging.info("Файл состояния пустой, считаем что никто не был онлайн")
+                logging.info("Файл состояния пустой")
                 return set()
             data = json.loads(content)
+            # если в файле записано "никого"
+            if isinstance(data, str) and data == "никого":
+                return set()
             return set(data or [])
     except FileNotFoundError:
-        logging.info("Файл состояния не найден, считаем что никто не был онлайн")
+        logging.info("Файл состояния не найден")
         return set()
     except Exception:
-        logging.exception("Не удалось прочитать файл состояния, возвращаю пустой набор")
+        logging.exception("Не удалось прочитать файл состояния")
         return set()
 
 def write_last(players: Set[str]):
     try:
         os.makedirs(os.path.dirname(STATE_PATH), exist_ok=True)
         with open(STATE_PATH, "w", encoding="utf-8") as f:
-            json.dump(sorted(list(players)), f, ensure_ascii=False)
+            if players:
+                json.dump(sorted(list(players)), f, ensure_ascii=False)
+            else:
+                json.dump("никого", f, ensure_ascii=False)
             f.flush()
             os.fsync(f.fileno())
-        logging.info("Состояние сохранено: %s", players)
+        logging.info("Состояние сохранено: %s", players if players else "никого")
     except Exception:
         logging.exception("Не удалось сохранить файл состояния")
 
@@ -102,11 +108,6 @@ def main():
     last = read_last()
     current, method = get_players()
 
-    # если список пустой, не затираем состояние
-    if not current and last:
-        logging.info("Игроков не получено, оставляю предыдущее состояние")
-        current = last
-
     joined = sorted(list(current - last))
     left = sorted(list(last - current))
 
@@ -122,9 +123,8 @@ def main():
     if not joined and not left:
         logging.info("Изменений в составе нет. Сейчас: %s", ', '.join(sorted(current)) if current else "никого")
 
-    # обновляем файл только если список не пустой
-    if current:
-        write_last(current)
+    # всегда обновляем файл — если игроков нет, пишем "никого"
+    write_last(current)
 
     summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current)) if current else 'никого'}"
     logging.info("Summary: %s", summary)
