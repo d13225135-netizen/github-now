@@ -35,3 +35,10 @@ jobs:
           MC_HOST: "yaneznau.peniscraft.pro"
           MC_TIMEOUT: "5"
         run: python scripts/check.py
+      - name: Upload state files
+        uses: actions/upload-artifact@v4
+        with:
+          name: minecraft-state
+          path: |
+            scripts/last_players.txt
+            scripts/playtime.json
