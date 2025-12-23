@@ -149,8 +149,8 @@ def main():
         for p in left:
             send(f"🚪 *Игрок {p} вышел с сервера.*\n📊 Сейчас {len(current)} игроков: {', '.join(sorted(current)) if current else 'никого'}")
 
-    if not joined and not left:
-        logging.info("Изменений в составе нет. Сейчас: %s", ', '.join(sorted(current)) if current else "никого")
+   # if not joined and not left:
+   #     logging.info("Изменений в составе нет. Сейчас: %s", ', '.join(sorted(current)) if current else "никого")
 
     write_last(current)
     update_playtime(joined, left)
