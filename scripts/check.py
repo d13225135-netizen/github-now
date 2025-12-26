@@ -149,16 +149,25 @@ def main():
         for p in left:
             send(f"🚪 *Игрок {p} вышел с сервера.*\n📊 Сейчас {len(current)} игроков: {', '.join(sorted(current)) if current else 'никого'}")
 
-   # if not joined and not left:
-   #     logging.info("Изменений в составе нет. Сейчас: %s", ', '.join(sorted(current)) if current else "никого")
+    if not joined and not left:
+        logging.info("Изменений в составе нет. Сейчас: %s", ', '.join(sorted(current)) if current else "никого")
 
     write_last(current)
     update_playtime(joined, left)
 
-    summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current)) if current else 'никого'}"
-    send(summary)
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    send(f"--------------\n🕒 Сеанс завершён: {now}\n--------------")
+    # --- Итоговые сообщения ---
+    # Отправляем только если есть игроки
+    if current:
+        summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* {', '.join(sorted(current))}"
+        send(summary)
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        send(f"--------------\n🕒 Сеанс завершён: {now}\n--------------")
+
+    # Если никого нет — эта часть закомментирована, чтобы бот не отправлял сообщения
+    # summary = f"*Сервер:* `{SERVER_ADDR}`\n*Метод:* {method}\n*Игроки сейчас:* никого"
+    # send(summary)
+    # now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # send(f"--------------\n🕒 Сеанс завершён: {now}\n--------------")
 
     logging.info("=== check.py finished ===")
 
